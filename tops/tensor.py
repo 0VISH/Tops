@@ -46,10 +46,10 @@ class Add(Function):
     def backward(*args, **kargs):
         self = args[0]
         out  = args[1]
-        self.lhs.grad += out.grad
-        self.rhs.grad += out.grad
-        self.lhs.__backward()
-        self.rhs.__backward()
+        self.lhs.grad = out.grad
+        self.rhs.grad = out.grad
+        self.lhs._backward()
+        self.rhs._backward()
     def __repr__(self): return "<Function: add>"
 class Sub(Function):
     def forward(*args, **kargs):
@@ -62,10 +62,10 @@ class Sub(Function):
     def backward(*args, **kargs):
         self = args[0]
         out  = args[1]
-        self.lhs.grad += out.grad
-        self.rhs.grad += -1 * out.grad
-        self.lhs.__backward()
-        self.rhs.__backward()
+        self.lhs.grad = out.grad
+        self.rhs.grad = -1 * out.grad
+        self.lhs._backward()
+        self.rhs._backward()
     def __repr__(self): return "<Function: sub>"
 class Hadamard(Function):
     def forward(*args, **kargs):
@@ -78,10 +78,10 @@ class Hadamard(Function):
     def backward(*args, **kargs):
         self = args[0]
         out  = args[1]
-        self.lhs.grad += self.rhs.arr * out.grad
-        self.rhs.grad += self.lhs.arr * out.grad
-        self.lhs.__backward()
-        self.rhs.__backward()
+        self.lhs.grad = self.rhs.arr * out.grad
+        self.rhs.grad = self.lhs.arr * out.grad
+        self.lhs._backward()
+        self.rhs._backward()
     def __repr__(self): return "<Function: hadamard>"
 class Dot(Function):
     def forward(*args, **kargs):
@@ -96,10 +96,10 @@ class Dot(Function):
     def backward(*args, **kargs):
         self = args[0]
         out  = args[1]
-        self.lhs.grad += self.rhs.arr @ out.grad
-        self.rhs.grad += self.lhs.arr @ out.grad
-        self.lhs.__backward()
-        self.rhs.__backward()
+        self.lhs.grad = self.rhs.arr * out.grad
+        self.rhs.grad = self.lhs.arr * out.grad
+        self.lhs._backward()
+        self.rhs._backward()
     def __repr__(self): return "<Function: dot>"
 
 class Tensor:
@@ -113,14 +113,9 @@ class Tensor:
     def __repr__(self): return f"<tensor: {self.shape()}, {Type.getName(self.type)}>"
     @staticmethod
     def rand(x: int, y: int, dtype:Type=Type.f64):
-        t = Tensor([], dtype=dtype)
-        t.arr = np.random.randn(x, y).astype(dtype)
-        return t
-    def fill(shape, val, dtype:Type=Type.f64):
-        t = Tensor([], dtype=dtype)
-        t.arr = np.full(shape, val, dtype=dtype)
-        return t
-    def zeroGrad(): self.grad = 0
+        return Tensor(np.random.randn(x, y).astype(dtype), dtype=dtype)
+    def fill(self, shape, val, dtype:Type=Type.f64):
+        return Tensor(np.full(shape, val, dtype=dtype), dtype=dtype)
     def __add__(self, other):
         f = Add()
         return f.forward(self, other)
@@ -133,12 +128,12 @@ class Tensor:
     def __mul__(self, other):
         f = Hadamard()
         return f.forward(self, other)
-    def __backward(self):
+    def _backward(self):
         origin = self.origin
         if origin != None: origin.backward(self)
     def backward(self):
         self.grad = np.full(self.shape(), 1)
-        self.__backward()
+        self._backward()
     def printGraph(self, level=0):
         origin = self.origin
         print(level*"    ", end="")
