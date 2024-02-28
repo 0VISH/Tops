@@ -30,13 +30,17 @@ class Function:
     def forward(*args, **kargs):  raise NotImplementedError(f"forward not implemented for {args[0].__class__.__name__}")
     def backward(*args, **kargs): raise NotImplementedError(f"backward not implemented for {args[0].__class__.__name__}")
     def __repr__(self): raise NotImplementedError(f"__repr__ not implemented for {self.__class__.__name__}")
+    def printGraph(self, level):
+        print(self)
+        self.lhs.printGraph(level+1)
+        self.rhs.printGraph(level+1)
 
 class Add(Function):
     def forward(*args, **kargs):
         self = args[0]
         self.lhs = args[1]
         self.rhs = args[2]
-        t = Tensor(self.lhs.arr + self.rhs.arr, args[1].type)
+        t = Tensor(self.lhs.arr + self.rhs.arr, dtype=args[1].type)
         t.origin = self
         return t
     def backward(*args, **kargs):
@@ -44,13 +48,15 @@ class Add(Function):
         out  = args[1]
         self.lhs.grad += out.grad
         self.rhs.grad += out.grad
+        self.lhs.__backward()
+        self.rhs.__backward()
     def __repr__(self): return "<Function: add>"
 class Sub(Function):
     def forward(*args, **kargs):
         self = args[0]
         self.lhs = args[1]
         self.rhs = args[2]
-        t = Tensor(self.lhs.arr - self.rhs.arr, args[1].type)
+        t = Tensor(self.lhs.arr - self.rhs.arr, dtype=args[1].type)
         t.origin = self
         return t
     def backward(*args, **kargs):
@@ -58,13 +64,15 @@ class Sub(Function):
         out  = args[1]
         self.lhs.grad += out.grad
         self.rhs.grad += -1 * out.grad
+        self.lhs.__backward()
+        self.rhs.__backward()
     def __repr__(self): return "<Function: sub>"
 class Hadamard(Function):
     def forward(*args, **kargs):
         self = args[0]
         self.lhs = args[1]
         self.rhs = args[2]
-        t = Tensor(np.multiply(self.lhs.arr, self.rhs.arr), args[1].type)
+        t = Tensor(np.multiply(self.lhs.arr, self.rhs.arr), dtype=args[1].type)
         t.origin = self
         return t
     def backward(*args, **kargs):
@@ -72,6 +80,8 @@ class Hadamard(Function):
         out  = args[1]
         self.lhs.grad += self.rhs.arr * out.grad
         self.rhs.grad += self.lhs.arr * out.grad
+        self.lhs.__backward()
+        self.rhs.__backward()
     def __repr__(self): return "<Function: hadamard>"
 class Dot(Function):
     def forward(*args, **kargs):
@@ -80,7 +90,7 @@ class Dot(Function):
         self.rhs = args[2]
         res = np.dot(self.lhs.arr, self.rhs.arr)
         if np.shape(res) == (): res = np.array([res])
-        t = Tensor(res, args[1].type)
+        t = Tensor(res, dtype=args[1].type)
         t.origin = self
         return t
     def backward(*args, **kargs):
@@ -88,12 +98,15 @@ class Dot(Function):
         out  = args[1]
         self.lhs.grad += self.rhs.arr @ out.grad
         self.rhs.grad += self.lhs.arr @ out.grad
+        self.lhs.__backward()
+        self.rhs.__backward()
     def __repr__(self): return "<Function: dot>"
 
 class Tensor:
-    def __init__(self, arr: list, dtype:Type=Type.f64):
+    def __init__(self, arr: list, shape=None, dtype:Type=Type.f64):
         self.type = dtype
         self.arr  = np.array(arr, dtype=self.type)
+        if shape != None: self.arr = np.reshape(self.arr, shape)
         self.grad = np.full(np.shape(self.arr), 0, dtype=Type.f64)
         self.origin = None
     def shape(self): return np.shape(self.arr)
@@ -122,18 +135,12 @@ class Tensor:
         return f.forward(self, other)
     def __backward(self):
         origin = self.origin
-        if origin != None:
-            origin.backward(self)
-            origin.lhs.__backward()
-            origin.rhs.__backward()
+        if origin != None: origin.backward(self)
     def backward(self):
         self.grad = np.full(self.shape(), 1)
         self.__backward()
     def printGraph(self, level=0):
         origin = self.origin
         print(level*"    ", end="")
-        if origin != None:
-            print(origin)
-            origin.lhs.printGraph(level+1)
-            origin.rhs.printGraph(level+1)
+        if origin != None: origin.printGraph(level)
         else: print(self)
