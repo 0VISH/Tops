@@ -24,13 +24,20 @@ class net(NN):
         z2 = z1 @ self.w2 + self.b2
         return z2
 
-EPOCH = 100
+EPOCH = 10
 n = net()
 optim = SGD(n.getParameters())
 for e in range(EPOCH):
     for i in range(len(inputs)):
         input = Tensor(inputs[i], shape=(1,2))
-        output = n.forward(input)
+        predicted = n.forward(input)
+        truth = Tensor(outputs[i])
         optim.zeroGrad()
-        output.backward()
+        predicted.backward()
         optim.step()
+
+for i in range(len(inputs)):
+    input = Tensor(inputs[i], shape=(1,2))
+    predicted = n.forward(input)
+    truth = Tensor(outputs[i])
+    print(input.arr, "->", predicted.arr, ",truth=", truth.arr)

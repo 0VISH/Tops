@@ -25,7 +25,7 @@ class Type:
         if t == Type.s8:  return "s8"
         if t == Type.u8:  return "u8"
 
-class Function:
+class BinaryOp:
     def __init__(self): pass
     def forward(*args, **kargs):  raise NotImplementedError(f"forward not implemented for {args[0].__class__.__name__}")
     def backward(*args, **kargs): raise NotImplementedError(f"backward not implemented for {args[0].__class__.__name__}")
@@ -35,7 +35,7 @@ class Function:
         self.lhs.printGraph(level+1)
         self.rhs.printGraph(level+1)
 
-class Add(Function):
+class Add(BinaryOp):
     def forward(*args, **kargs):
         self = args[0]
         self.lhs = args[1]
@@ -51,7 +51,7 @@ class Add(Function):
         self.lhs._backward()
         self.rhs._backward()
     def __repr__(self): return "<Function: add>"
-class Sub(Function):
+class Sub(BinaryOp):
     def forward(*args, **kargs):
         self = args[0]
         self.lhs = args[1]
@@ -67,7 +67,7 @@ class Sub(Function):
         self.lhs._backward()
         self.rhs._backward()
     def __repr__(self): return "<Function: sub>"
-class Hadamard(Function):
+class Hadamard(BinaryOp):
     def forward(*args, **kargs):
         self = args[0]
         self.lhs = args[1]
@@ -83,7 +83,7 @@ class Hadamard(Function):
         self.lhs._backward()
         self.rhs._backward()
     def __repr__(self): return "<Function: hadamard>"
-class Dot(Function):
+class Dot(BinaryOp):
     def forward(*args, **kargs):
         self = args[0]
         self.lhs = args[1]
@@ -96,8 +96,8 @@ class Dot(Function):
     def backward(*args, **kargs):
         self = args[0]
         out  = args[1]
-        self.lhs.grad = self.rhs.arr * out.grad
-        self.rhs.grad = self.lhs.arr * out.grad
+        self.lhs.grad = np.dot(self.rhs.arr, out.grad)
+        self.rhs.grad = np.dot(self.lhs.arr.T, out.grad)
         self.lhs._backward()
         self.rhs._backward()
     def __repr__(self): return "<Function: dot>"

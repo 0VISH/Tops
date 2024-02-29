@@ -1,7 +1,7 @@
 from .tensor import *
 
 class Unary:
-    def __init__(self, input): self.input = input
+    def __init__(self, input: Tensor): self.input = input
     def forward(self, t: Tensor) -> Tensor:
         raise NotImplementedError(f"forward not implemented for {self.__class__.__name__}")
     def backward(self, t: Tensor) -> Tensor:
@@ -11,6 +11,36 @@ class Unary:
         print(self)
         self.input.printGraph(level+1)
 
+class Log(Unary):
+    @staticmethod
+    def forward(t: Tensor) -> Tensor:
+        out = Tensor(np.log(t.arr))
+        out.origin = Log(t)
+        return out
+    def backward(*args, **kargs) -> Tensor:
+        self = args[0]
+        self.input.grad = 1/self.input.arr
+class Mean(Unary):
+    @staticmethod
+    def forward(t: Tensor) -> Tensor:
+        out = Tensor(t.arr.mean())
+        out.origin = Mean(t)
+        return out
+    def backward(*args, **kargs) -> Tensor:
+        self = args[0]
+        self.input.grad = (1/self.input.shape()[0]) * (1/(self.input.arr.sum()**2))
+class Pow(Unary):
+    def __init__(self, input: Tensor, x: int):
+        super().__init__(input)
+        self.pow = x
+    @staticmethod
+    def forward(t: Tensor, x: int) -> Tensor:
+        out = Tensor(t.arr ** x)
+        out.origin = Pow(t, x)
+        return out
+    def backward(*args, **kargs) -> Tensor:
+        self = args[0]
+        self.input.grad = self.pow * (self.input.arr ** (self.pow-1))
 class Sigmoid(Unary):
     @staticmethod
     def forward(t: Tensor) -> Tensor:
@@ -19,6 +49,5 @@ class Sigmoid(Unary):
         return out
     def backward(*args, **kargs) -> Tensor:
         self = args[0]
-        t = args[1]
-        x = 1/(1 + np.exp(-t.arr))
-        return Tensor(x * (1-x))
+        x = 1/(1 + np.exp(-self.input.arr))
+        self.input.grad = x * (1-x)
