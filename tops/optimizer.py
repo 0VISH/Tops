@@ -7,4 +7,4 @@ class SGD:
         for i in self.parameters: i.fill(i.shape(), 0)
     def step(self):
         for i in self.parameters:
-            i.arr -= self.lr * (i.grad/self.batchSize)
+            i.arr -= self.lr * (i.grad)

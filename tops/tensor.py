@@ -96,7 +96,7 @@ class Dot(BinaryOp):
     def backward(*args, **kargs):
         self = args[0]
         out  = args[1]
-        self.lhs.grad = np.dot(self.rhs.arr, out.grad)
+        self.lhs.grad = np.dot(out.grad, self.rhs.arr.T)
         self.rhs.grad = np.dot(self.lhs.arr.T, out.grad)
         self.lhs._backward()
         self.rhs._backward()
@@ -114,7 +114,8 @@ class Tensor:
     @staticmethod
     def rand(x: int, y: int, dtype:Type=Type.f64):
         return Tensor(np.random.randn(x, y).astype(dtype), dtype=dtype)
-    def fill(self, shape, val, dtype:Type=Type.f64):
+    @staticmethod
+    def fill(shape, val, dtype:Type=Type.f64):
         return Tensor(np.full(shape, val, dtype=dtype), dtype=dtype)
     def __add__(self, other):
         f = Add()

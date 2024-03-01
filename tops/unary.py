@@ -20,6 +20,7 @@ class Log(Unary):
     def backward(*args, **kargs) -> Tensor:
         self = args[0]
         self.input.grad = 1/self.input.arr
+        self.input._backward()
 class Mean(Unary):
     @staticmethod
     def forward(t: Tensor) -> Tensor:
@@ -28,7 +29,8 @@ class Mean(Unary):
         return out
     def backward(*args, **kargs) -> Tensor:
         self = args[0]
-        self.input.grad = (1/self.input.shape()[0]) * (1/(self.input.arr.sum()**2))
+        self.input.grad = 1
+        self.input._backward()
 class Pow(Unary):
     def __init__(self, input: Tensor, x: int):
         super().__init__(input)
@@ -41,6 +43,7 @@ class Pow(Unary):
     def backward(*args, **kargs) -> Tensor:
         self = args[0]
         self.input.grad = self.pow * (self.input.arr ** (self.pow-1))
+        self.input._backward()
 class Sigmoid(Unary):
     @staticmethod
     def forward(t: Tensor) -> Tensor:
@@ -51,3 +54,4 @@ class Sigmoid(Unary):
         self = args[0]
         x = 1/(1 + np.exp(-self.input.arr))
         self.input.grad = x * (1-x)
+        self.input._backward()
