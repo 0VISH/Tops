@@ -2,9 +2,9 @@ from .tensor import *
 
 class Unary:
     def __init__(self, input: Tensor): self.input = input
-    def forward(self, t: Tensor) -> Tensor:
+    def forward(self, input: Tensor) -> Tensor:
         raise NotImplementedError(f"forward not implemented for {self.__class__.__name__}")
-    def backward(self, t: Tensor) -> Tensor:
+    def backward(self, out: Tensor) -> Tensor:
         raise NotImplementedError(f"backward not implemented for {self.__class__.__name__}")
     def __repr__(self): return f"<Unary: {self.__class__.__name__}>"
     def printGraph(self, level):
@@ -17,19 +17,17 @@ class Log(Unary):
         out = Tensor(np.log(t.arr))
         out.origin = Log(t)
         return out
-    def backward(*args, **kargs) -> Tensor:
-        self = args[0]
-        self.input.grad = 1/self.input.arr
+    def backward(self, out) -> Tensor:
+        self.input.grad = (1/self.input.arr) * out.grad
         self.input._backward()
 class Mean(Unary):
     @staticmethod
     def forward(t: Tensor) -> Tensor:
-        out = Tensor(t.arr.mean())
+        out = Tensor(t.arr.mean(), dtype=t.arr.dtype)
         out.origin = Mean(t)
         return out
-    def backward(*args, **kargs) -> Tensor:
-        self = args[0]
-        self.input.grad = 1
+    def backward(self, out) -> Tensor:
+        self.input.grad = 1 * out.grad
         self.input._backward()
 class Pow(Unary):
     def __init__(self, input: Tensor, x: int):
@@ -40,9 +38,8 @@ class Pow(Unary):
         out = Tensor(t.arr ** x)
         out.origin = Pow(t, x)
         return out
-    def backward(*args, **kargs) -> Tensor:
-        self = args[0]
-        self.input.grad = self.pow * (self.input.arr ** (self.pow-1))
+    def backward(self, out) -> Tensor:
+        self.input.grad = self.pow * (self.input.arr ** (self.pow-1)) * out.grad
         self.input._backward()
 class Sigmoid(Unary):
     @staticmethod
@@ -50,8 +47,7 @@ class Sigmoid(Unary):
         out = Tensor(1/(1 + np.exp(-t.arr)))
         out.origin = Sigmoid(t)
         return out
-    def backward(*args, **kargs) -> Tensor:
-        self = args[0]
+    def backward(self, out) -> Tensor:
         x = 1/(1 + np.exp(-self.input.arr))
-        self.input.grad = x * (1-x)
+        self.input.grad = x * (1-x) * out.grad
         self.input._backward()
