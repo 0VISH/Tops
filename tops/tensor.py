@@ -76,12 +76,12 @@ class Dot(BinaryOp):
 class Tensor:
     def __init__(self, arr, shape=None, dtype:Type=Type.f64):
         if(type(arr) == np.ndarray): self.arr = arr
-        else: self.arr  = np.array(arr, dtype=dtype)
+        else: self.arr = np.array(arr, dtype=dtype)
         if shape != None: self.arr = np.reshape(self.arr, shape)
-        self.grad = np.full(np.shape(self.arr), 0, dtype=Type.f64)
+        self.grad = np.full(np.shape(self.arr), 0, dtype=dtype)
         self.origin = None
     def shape(self): return np.shape(self.arr)
-    def __repr__(self): return f"<tensor: {self.shape()}, {str(type(self.arr.dtype))}>"
+    def __repr__(self): return f"<Tensor: {self.shape()}, {str(self.arr.dtype)}>"
     @staticmethod
     def rand(x: int, y: int, dtype:Type=Type.f64):
         return Tensor(np.random.randn(x, y).astype(dtype), dtype=dtype)
