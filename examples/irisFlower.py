@@ -27,11 +27,13 @@ class net(NN):
         self.l1 = Linear(4, 10)
         self.l2 = Linear(10, 5)
         self.l3 = Linear(5, 3)
+        self.norm = BatchNormalization()
     def forward(self, x):
         z1 = Sigmoid.forward(self.l1.forward(x))
-        z2 = Sigmoid.forward(self.l2.forward(z1))
-        z3 = Sigmoid.forward(self.l3.forward(z2))
-        return z3
+        z2 = self.norm.forward(z1)
+        z3 = Sigmoid.forward(self.l2.forward(z2))
+        z4 = Sigmoid.forward(self.l3.forward(z3))
+        return z4
 
 n = net()
 optim = SGD(n.getParameters())

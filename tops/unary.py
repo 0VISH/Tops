@@ -1,4 +1,5 @@
 from .tensor import *
+import numpy as np
 
 class UnaryOp:
     def __init__(self, input: Tensor): self.input = input
@@ -23,12 +24,24 @@ class Log(UnaryOp):
 class Mean(UnaryOp):
     @staticmethod
     def forward(t: Tensor) -> Tensor:
-        out = Tensor(t.arr.mean(), dtype=t.arr.dtype)
+        out = Tensor([t.arr.mean()], dtype=t.arr.dtype)
         out.origin = Mean(t)
         return out
     def backward(self, out) -> Tensor:
-        self.input.grad = 1 * out.grad
+        out.grad = np.sum(out.grad)
+        self.input.grad = np.full(self.input.shape(), out.grad/self.input.count())
         self.input._backward()
+class StdDev(UnaryOp):
+    @staticmethod
+    def forward(t: Tensor) -> Tensor:
+        out = Tensor([t.arr.std()], dtype=t.arr.dtype)
+        out.origin = StdDev(t)
+        return out
+    def backward(self, out) -> Tensor:
+        mean = self.input.arr.mean()
+        res  = (1/(out.arr+DELTA)) * ((self.input.arr - mean) / np.shape(self.input.arr)[1]) * out.grad
+        out.grad = np.sum(out.grad)
+        self.input.grad = res
 class Pow(UnaryOp):
     def __init__(self, input: Tensor, x: int):
         super().__init__(input)
