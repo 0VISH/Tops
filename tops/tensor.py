@@ -1,4 +1,5 @@
 import numpy as np
+from .ops import *
 
 DELTA = 1e-6
 
@@ -14,16 +15,16 @@ class Type:
     f32 = np.float32
     f64 = np.float64
 
-class BinaryOp:
-    def __init__(self): pass
-    def forward(self, lhs, rhs):  raise NotImplementedError(f"forward not implemented for {args[0].__class__.__name__}")
-    def backward(self, out): raise NotImplementedError(f"backward not implemented for {args[0].__class__.__name__}")
-    def __repr__(self): return f"<Binary: {self.__class__.__name__}>"
-    def printGraph(self, level):
-        print(self)
-        self.lhs.printGraph(level+1)
-        self.rhs.printGraph(level+1)
-
+class Echo(BroadcastOp):
+    def __init__(self, outputShape): self.outputShape = outputShape
+    def forward(self, t):
+        self.input = t
+        out = Tensor.fill(self.outputShape, t.arr, dtype=t.type())
+        out.origin = self
+        return out
+    def backward(self, out):
+        self.input.grad += np.array([[np.sum(out.grad)]], dtype=out.type())
+        self.input._backward()
 class Add(BinaryOp):
     def forward(self, lhs, rhs):
         self.lhs = lhs
@@ -54,6 +55,12 @@ class Hadamard(BinaryOp):
         self.rhs = rhs
         t = Tensor(np.multiply(lhs.arr, rhs.arr))
         t.origin = self
+        if lhs.shape() == (1,1):
+            b = Echo(rhs.shape())
+            self.lhs = b.forward(self.lhs)
+        if rhs.shape() == (1,1):
+            b = Echo(lhs.shape())
+            self.rhs = b.forward(self.rhs)
         return t
     def backward(self, out):
         self.lhs.grad = self.rhs.arr * out.grad
@@ -79,9 +86,14 @@ class Div(BinaryOp):
         self.lhs = lhs
         self.rhs = rhs
         res = lhs.arr / (rhs.arr + DELTA)
-        #if np.shape(res) == (): res = np.array([res])
         t = Tensor(res)
         t.origin = self
+        if lhs.shape() == (1,1):
+            b = Echo(rhs.shape())
+            self.lhs = b.forward(self.lhs)
+        if rhs.shape() == (1,1):
+            b = Echo(lhs.shape())
+            self.rhs = b.forward(self.rhs)
         return t
     def backward(self, out):
         self.lhs.grad = (1/(self.rhs.arr+DELTA)) * out.grad

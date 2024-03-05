@@ -29,7 +29,7 @@ EPOCHS = 10000
 for i in range(EPOCHS):
     for j in range(4):
         optim.zeroGrad()
-        input = Tensor(inputs[j], shape=(1,2), dtype=Type.f32)
+        input = Tensor([inputs[j]], dtype=Type.f32)
         predicted = n.forward(input)
         truth = Tensor([[outputs[j]]], dtype=Type.f32)
         loss = MSE.forward(truth, predicted)

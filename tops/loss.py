@@ -1,5 +1,5 @@
-from .unary import *
 from .tensor import *
+from .basicOps import *
 
 class MSE(BinaryOp):
     @staticmethod

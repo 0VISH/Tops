@@ -1,5 +1,4 @@
 from .tensor import *
-from .unary import *
 
 class Linear(UnaryOp):
     def __init__(self, inNeuron: int, outNeuron: int, dtype:Type=Type.f64):
