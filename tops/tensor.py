@@ -23,7 +23,7 @@ class Echo(BroadcastOp):
         out.origin = self
         return out
     def backward(self, out):
-        self.input.grad += np.array([[np.sum(out.grad)]], dtype=out.type())
+        self.input.grad = np.array([[np.sum(out.grad)]], dtype=out.type())
         self.input._backward()
 class Add(BinaryOp):
     def forward(self, lhs, rhs):
@@ -31,6 +31,12 @@ class Add(BinaryOp):
         self.rhs = rhs
         t = Tensor(lhs.arr + rhs.arr)
         t.origin = self
+        if lhs.shape() == (1,1):
+            b = Echo(rhs.shape())
+            self.lhs = b.forward(self.lhs)
+        if rhs.shape() == (1,1):
+            b = Echo(lhs.shape())
+            self.rhs = b.forward(self.rhs)
         return t
     def backward(self, out):
         self.lhs.grad = out.grad
@@ -43,6 +49,12 @@ class Sub(BinaryOp):
         self.rhs = rhs
         t = Tensor(lhs.arr - rhs.arr)
         t.origin = self
+        if lhs.shape() == (1,1):
+            b = Echo(rhs.shape())
+            self.lhs = b.forward(self.lhs)
+        if rhs.shape() == (1,1):
+            b = Echo(lhs.shape())
+            self.rhs = b.forward(self.rhs)
         return t
     def backward(self, out):
         self.lhs.grad = out.grad
@@ -108,6 +120,7 @@ class Tensor:
         if shape != None: self.arr = np.reshape(self.arr, shape)
         self.grad = np.full(np.shape(self.arr), 0, dtype=dtype)
         self.origin = None
+    def type(self):  return self.arr.dtype
     def shape(self): return np.shape(self.arr)
     def count(self): return np.size(self.arr)
     def sum(self):   return np.sum(self.arr)

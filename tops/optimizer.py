@@ -1,5 +1,3 @@
-import numpy as np
-
 class SGD:
     def __init__(self, parameters: list, batchSize=1):
         self.parameters = parameters
