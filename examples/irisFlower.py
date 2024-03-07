@@ -1,7 +1,7 @@
 from tops import *
 from random import shuffle
 
-file = open("examples/data/IrisFlower.csv", "r")
+file = open("extra/data/IrisFlower.csv", "r")
 next(file) #skip header
 
 nameToId = {
@@ -29,10 +29,10 @@ class net(NN):
         self.l3 = Linear(5, 3)
         self.norm = BatchNormalization()
     def forward(self, x):
-        z1 = Sigmoid.forward(self.l1.forward(x))
+        z1 = Sigmoid(self.l1.forward(x))
         z2 = self.norm.forward(z1)
-        z3 = Sigmoid.forward(self.l2.forward(z2))
-        z4 = Sigmoid.forward(self.l3.forward(z3))
+        z3 = Sigmoid(self.l2.forward(z2))
+        z4 = Sigmoid(self.l3.forward(z3))
         return z4
 
 n = net()

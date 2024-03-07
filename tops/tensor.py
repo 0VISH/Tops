@@ -1,5 +1,6 @@
 import numpy as np
 from .ops import *
+from .driver import *
 
 DELTA = 1e-6
 
@@ -25,101 +26,15 @@ class Echo(BroadcastOp):
     def backward(self, out):
         self.input.grad = np.array([[np.sum(out.grad)]], dtype=out.type())
         self.input._backward()
-class Add(BinaryOp):
-    def forward(self, lhs, rhs):
-        self.lhs = lhs
-        self.rhs = rhs
-        t = Tensor(lhs.arr + rhs.arr)
-        t.origin = self
-        if lhs.shape() == (1,1):
-            b = Echo(rhs.shape())
-            self.lhs = b.forward(self.lhs)
-        if rhs.shape() == (1,1):
-            b = Echo(lhs.shape())
-            self.rhs = b.forward(self.rhs)
-        return t
-    def backward(self, out):
-        self.lhs.grad = out.grad
-        self.rhs.grad = out.grad
-        self.lhs._backward()
-        self.rhs._backward()
-class Sub(BinaryOp):
-    def forward(self, lhs, rhs):
-        self.lhs = lhs
-        self.rhs = rhs
-        t = Tensor(lhs.arr - rhs.arr)
-        t.origin = self
-        if lhs.shape() == (1,1):
-            b = Echo(rhs.shape())
-            self.lhs = b.forward(self.lhs)
-        if rhs.shape() == (1,1):
-            b = Echo(lhs.shape())
-            self.rhs = b.forward(self.rhs)
-        return t
-    def backward(self, out):
-        self.lhs.grad = out.grad
-        self.rhs.grad = -out.grad
-        self.lhs._backward()
-        self.rhs._backward()
-class Hadamard(BinaryOp):
-    def forward(self, lhs, rhs):
-        self.lhs = lhs
-        self.rhs = rhs
-        t = Tensor(np.multiply(lhs.arr, rhs.arr))
-        t.origin = self
-        if lhs.shape() == (1,1):
-            b = Echo(rhs.shape())
-            self.lhs = b.forward(self.lhs)
-        if rhs.shape() == (1,1):
-            b = Echo(lhs.shape())
-            self.rhs = b.forward(self.rhs)
-        return t
-    def backward(self, out):
-        self.lhs.grad = self.rhs.arr * out.grad
-        self.rhs.grad = self.lhs.arr * out.grad
-        self.lhs._backward()
-        self.rhs._backward()
-class Dot(BinaryOp):
-    def forward(self, lhs, rhs):
-        self.lhs = lhs
-        self.rhs = rhs
-        res = np.dot(lhs.arr, rhs.arr)
-        if np.shape(res) == (): res = np.array([res])
-        t = Tensor(res)
-        t.origin = self
-        return t
-    def backward(self, out):
-        self.lhs.grad = np.dot(out.grad, self.rhs.arr.T)
-        self.rhs.grad = np.dot(self.lhs.arr.T, out.grad)
-        self.lhs._backward()
-        self.rhs._backward()
-class Div(BinaryOp):
-    def forward(self, lhs, rhs):
-        self.lhs = lhs
-        self.rhs = rhs
-        res = lhs.arr / (rhs.arr + DELTA)
-        t = Tensor(res)
-        t.origin = self
-        if lhs.shape() == (1,1):
-            b = Echo(rhs.shape())
-            self.lhs = b.forward(self.lhs)
-        if rhs.shape() == (1,1):
-            b = Echo(lhs.shape())
-            self.rhs = b.forward(self.rhs)
-        return t
-    def backward(self, out):
-        self.lhs.grad = (1/(self.rhs.arr+DELTA)) * out.grad
-        self.rhs.grad = self.lhs.arr / ((self.rhs.arr ** 2)+DELTA)
-        self.lhs._backward()
-        self.rhs._backward()
 
 class Tensor:
-    def __init__(self, arr, shape=None, dtype:Type=Type.f64):
+    def __init__(self, arr, shape=None, dtype:Type=Type.f64, driver=CPUDriver(), origin=None):
         if(type(arr) == np.ndarray): self.arr = arr
         else: self.arr = np.array(arr, dtype=dtype)
         if shape != None: self.arr = np.reshape(self.arr, shape)
         self.grad = np.full(np.shape(self.arr), 0, dtype=dtype)
-        self.origin = None
+        self.origin = origin
+        self.driver = driver
     def type(self):  return self.arr.dtype
     def shape(self): return np.shape(self.arr)
     def count(self): return np.size(self.arr)
@@ -132,19 +47,51 @@ class Tensor:
     def fill(shape, val, dtype:Type=Type.f64):
         return Tensor(np.full(shape, val, dtype=dtype), dtype=dtype)
     def __add__(self, other):
-        f = Add()
-        return f.forward(self, other)
+        lhs = self
+        rhs = other
+        if lhs.shape() == (1,1):
+            b = Echo(rhs.shape())
+            lhs = b.forward(lhs)
+        if rhs.shape() == (1,1):
+            b = Echo(lhs.shape())
+            rhs = b.forward(rhs)
+        f = self.driver.Add()
+        return f.forward(lhs, rhs)
     def __sub__(self, other):
-        f = Sub()
-        return f.forward(self, other)
-    def __matmul__(self, other):
-        f = Dot()
-        return f.forward(self, other)
+        lhs = self
+        rhs = other
+        if lhs.shape() == (1,1):
+            b = Echo(rhs.shape())
+            lhs = b.forward(lhs)
+        if rhs.shape() == (1,1):
+            b = Echo(lhs.shape())
+            rhs = b.forward(rhs)
+        f = self.driver.Sub()
+        return f.forward(lhs, rhs)
     def __mul__(self, other):
-        f = Hadamard()
-        return f.forward(self, other)
+        lhs = self
+        rhs = other
+        if lhs.shape() == (1,1):
+            b = Echo(rhs.shape())
+            lhs = b.forward(lhs)
+        if rhs.shape() == (1,1):
+            b = Echo(lhs.shape())
+            rhs = b.forward(rhs)
+        f = self.driver.Mul()
+        return f.forward(lhs, rhs)
     def __truediv__(self, other):
-        f = Div()
+        lhs = self
+        rhs = other
+        if lhs.shape() == (1,1):
+            b = Echo(rhs.shape())
+            lhs = b.forward(lhs)
+        if rhs.shape() == (1,1):
+            b = Echo(lhs.shape())
+            rhs = b.forward(rhs)
+        f = self.driver.Div()
+        return f.forward(lhs, rhs)
+    def __matmul__(self, other):
+        f = self.driver.Dot()
         return f.forward(self, other)
     def _backward(self):
         origin = self.origin

@@ -18,8 +18,8 @@ class net(NN):
         self.l1 = Linear(2, 3, dtype=Type.f32)
         self.l2 = Linear(3, 1, dtype=Type.f32)
     def forward(self, x):
-        z1 = Sigmoid.forward(self.l1.forward(x))
-        z2 = Sigmoid.forward(self.l2.forward(z1))
+        z1 = Sigmoid(self.l1.forward(x))
+        z2 = Sigmoid(self.l2.forward(z1))
         return z2
 
 n = net()

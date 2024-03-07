@@ -1,5 +1,4 @@
 from .tensor import *
-from .basicOps import *
 
 class Linear(UnaryOp):
     def __init__(self, inNeuron: int, outNeuron: int, dtype:Type=Type.f64):
@@ -12,8 +11,8 @@ class BatchNormalization(UnaryOp):
         self.alpha = Tensor.rand(1, 1)
         self.beta  = Tensor.rand(1, 1)
     def forward(self, t: Tensor) -> Tensor:
-        mean = Mean.forward(t)
-        std  = StdDev.forward(t)
+        mean = Mean(t)
+        std  = StdDev(t)
         new  = (t - mean)/std
         return self.alpha@new + self.beta
 class NN:
