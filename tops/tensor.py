@@ -49,10 +49,10 @@ class Tensor:
     def __add__(self, other):
         lhs = self
         rhs = other
-        if lhs.shape() == (1,1):
+        if lhs.shape() == (1,1) or lhs.shape() == (1,):
             b = Echo(rhs.shape())
             lhs = b.forward(lhs)
-        if rhs.shape() == (1,1):
+        if rhs.shape() == (1,1) or rhs.shape() == (1,):
             b = Echo(lhs.shape())
             rhs = b.forward(rhs)
         f = self.driver.Add()
@@ -60,10 +60,10 @@ class Tensor:
     def __sub__(self, other):
         lhs = self
         rhs = other
-        if lhs.shape() == (1,1):
+        if lhs.shape() == (1,1) or lhs.shape() == (1,):
             b = Echo(rhs.shape())
             lhs = b.forward(lhs)
-        if rhs.shape() == (1,1):
+        if rhs.shape() == (1,1) or rhs.shape() == (1,):
             b = Echo(lhs.shape())
             rhs = b.forward(rhs)
         f = self.driver.Sub()
@@ -71,10 +71,10 @@ class Tensor:
     def __mul__(self, other):
         lhs = self
         rhs = other
-        if lhs.shape() == (1,1):
+        if lhs.shape() == (1,1) or lhs.shape() == (1,):
             b = Echo(rhs.shape())
             lhs = b.forward(lhs)
-        if rhs.shape() == (1,1):
+        if rhs.shape() == (1,1) or rhs.shape() == (1,):
             b = Echo(lhs.shape())
             rhs = b.forward(rhs)
         f = self.driver.Mul()
@@ -82,10 +82,10 @@ class Tensor:
     def __truediv__(self, other):
         lhs = self
         rhs = other
-        if lhs.shape() == (1,1):
+        if lhs.shape() == (1,1) or lhs.shape() == (1,):
             b = Echo(rhs.shape())
             lhs = b.forward(lhs)
-        if rhs.shape() == (1,1):
+        if rhs.shape() == (1,1) or rhs.shape() == (1,):
             b = Echo(lhs.shape())
             rhs = b.forward(rhs)
         f = self.driver.Div()

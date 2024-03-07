@@ -55,7 +55,6 @@ class CPUDriver:
             self.input = input
             return tensor.Tensor([input.arr.mean()], dtype=input.type(), origin=self)
         def backward(self, out):
-            out.grad = np.sum(out.grad)
             self.input.grad = np.full(self.input.shape(), out.grad/self.input.count())
             self.input._backward()
     class StdDev(ops.BroadcastOp):
@@ -65,7 +64,6 @@ class CPUDriver:
         def backward(self, out):
             mean = self.input.arr.mean()
             res  = (1/(out.arr+tensor.DELTA)) * ((self.input.arr - mean) / np.shape(self.input.arr)[1]) * out.grad
-            out.grad = np.sum(out.grad)
             self.input.grad = res
     class Pow(ops.UnaryOp):
         def forward(self, input, x: int):
