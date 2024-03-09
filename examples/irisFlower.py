@@ -37,7 +37,8 @@ class net(NN):
 
 n = net()
 optim = SGD(n.getParameters())
-EPOCHS = 100
+EPOCHS = 150
+runningLoss = 0
 
 for i in range(EPOCHS):
     for j in range(len(data)):
@@ -46,9 +47,13 @@ for i in range(EPOCHS):
         predicted = n.forward(input)
         truth = Tensor(data[j][1])
         loss = MSE.forward(truth, predicted)
+        runningLoss += loss.arr
+        print(f"epoch: {i}/{EPOCHS}", "loss:", loss.arr, end="\r")
         loss.backward()
         optim.step(0.1)
 
+print("\nloss:", runningLoss/(EPOCHS*len(data)))
+        
 for i in range(10):
     input = Tensor(data[i][0], shape=(1, 4))
     predicted = n.forward(input)

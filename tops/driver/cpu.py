@@ -27,18 +27,20 @@ class CPUDriver:
         def forward(self, lhs, rhs):
             super().reg(lhs, rhs)
             return tensor.Tensor(np.multiply(lhs.arr, rhs.arr), origin=self)
-        def backward(self, out):
-            self.lhs.grad = self.rhs.arr * out.grad
-            self.rhs.grad = self.lhs.arr * out.grad
-            self.lhs._backward()
-            self.rhs._backward()
+        def backward(self, grad):
+            lhsGrad = self.rhs.arr * grad
+            rhsGrad = self.lhs.arr * grad
+            self.lhs.grad = lhsGrad
+            self.rhs.grad = rhsGrad
+            self.lhs._backward(lhsGrad)
+            self.rhs._backward(rhsGrad)
     class Div(ops.BinaryOp):
         def forward(self, lhs, rhs):
             super().reg(lhs, rhs)
             return tensor.Tensor(lhs.arr / (rhs.arr + tensor.DELTA), origin=self)
-        def backward(self, out):
+        def backward(self, grad):
             lhsGrad = (1/(self.rhs.arr+tensor.DELTA)) * grad
-            rhsGrad = (self.lhs.arr / ((self.rhs.arr ** 2)+tensor.DELTA)) * grad
+            rhsGrad = self.lhs.arr / ((self.rhs.arr ** 2)+tensor.DELTA) * grad
             self.lhs.grad = lhsGrad
             self.rhs.grad = rhsGrad
             self.lhs._backward(lhsGrad)
@@ -67,10 +69,12 @@ class CPUDriver:
     class StdDev(ops.BroadcastOp):
         def forward(self, input):
             self.input = input
-            return tensor.Tensor([input.arr.std()], dtype=input.type(), origin=self)
+            out = tensor.Tensor([input.arr.std()], dtype=input.type(), origin=self)
+            self.outArr = out.arr
+            return out
         def backward(self, grad):
             mean = self.input.arr.mean()
-            newGrad = (1/(out.arr+tensor.DELTA)) * ((self.input.arr - mean) / np.shape(self.input.arr)[1]) * grad
+            newGrad  = (1/(self.outArr+tensor.DELTA)) * ((self.input.arr - mean) / np.shape(self.input.arr)[1]) * grad
             self.input.grad = newGrad
             self.input._backward(newGrad)
     class Pow(ops.UnaryOp):
