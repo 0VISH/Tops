@@ -6,4 +6,4 @@ class SGD:
         for i in self.parameters: i.zeroGrad()
     def step(self, lr=0.001):
         for i in self.parameters:
-            i.arr -= lr * i.grad
+            i.arr -= lr * (i.grad/self.batchSize)

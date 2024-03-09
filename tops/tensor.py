@@ -24,8 +24,8 @@ class Echo(BroadcastOp):
         out.origin = self
         return out
     def backward(self, grad):
-        newGrad = np.array([[np.sum(grad)]])
-        self.input.grad = newGrad
+        newGrad = np.array([np.sum(grad)])
+        self.input.grad += newGrad
         self.input._backward(newGrad)
 
 class Tensor:
@@ -33,10 +33,10 @@ class Tensor:
         if(type(arr) == np.ndarray): self.arr = arr
         else: self.arr = np.array(arr, dtype=dtype)
         if shape != None: self.arr = np.reshape(self.arr, shape)
-        self.grad = np.full(np.shape(self.arr), 0)
+        self.grad = np.zeros_like(self.arr, dtype=np.float64)
         self.origin = origin
         self.driver = driver
-    def zeroGrad(self): self.grad = np.full(np.shape(self.arr), 0)
+    def zeroGrad(self): self.grad = np.zeros_like(self.arr, dtype=np.float64)
     def type(self):  return self.arr.dtype
     def shape(self): return np.shape(self.arr)
     def count(self): return np.size(self.arr)
