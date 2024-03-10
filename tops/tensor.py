@@ -43,8 +43,8 @@ class Tensor:
     def sum(self):   return np.sum(self.arr)
     def __repr__(self): return f"<Tensor: {self.shape()}, {str(self.arr.dtype)}>"
     @staticmethod
-    def rand(x: int, y: int, dtype:Type=Type.f64):
-        return Tensor(np.random.randn(x, y).astype(dtype), dtype=dtype)
+    def rand(shape, dtype:Type=Type.f64):
+        return Tensor(np.random.randn(*shape).astype(dtype), dtype=dtype)
     @staticmethod
     def fill(shape, val, dtype:Type=Type.f64):
         return Tensor(np.full(shape, val, dtype=dtype), dtype=dtype)
