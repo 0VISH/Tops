@@ -95,3 +95,32 @@ class CPUDriver:
             newGrad = x * (1-x) * grad
             self.input.grad += newGrad
             self.input._backward(newGrad)
+    @staticmethod
+    def Conv2DForward(input, kernel, stride):
+        inputX, inputY = input.shape()
+        kernelX, kernelY = kernel.shape()
+
+        outputY = (inputY - kernelY) // stride + 1
+        outputX = (inputX - kernelX) // stride + 1
+        output = np.zeros((outputY, outputX))
+        
+        for y in range(0, inputY - kernelY + 1, stride):
+            for x in range(0, inputX - kernelX + 1, stride):
+                region = input.arr[y:y+kernelY, x:x+kernelX]
+                output[y // stride, x // stride] = np.sum(region * kernel.arr)
+        return output
+    @staticmethod
+    def Conv2DBackward(input, kernel, grad, stride):
+        inputY, inputX = np.shape(input)
+        kernelY, kernelX = np.shape(kernel)
+        outputY, outputX = np.shape(grad)
+
+        gradInput = np.zeros_like(input)
+        gradKernel = np.zeros_like(kernel)
+    
+        for i in range(0, inputY - kernelY + 1, stride):
+            for j in range(0, inputX - kernelX + 1, stride):
+                gradInput[i:i+kernelY, j:j+kernelX] += kernel  * grad[i // stride, j // stride]
+                gradKernel += input[i:i+kernelY, j:j+kernelX]  * grad[i // stride, j // stride]
+            
+        return gradInput, gradKernel

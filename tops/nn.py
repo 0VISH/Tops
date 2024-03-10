@@ -1,22 +1,18 @@
 from .tensor import *
 
-class Convolve(BinaryOp):
+class Conv2D(BinaryOp):
     def __init__(self, kernelSize, stride=1):
         self.kernel = Tensor.rand(kernelSize)
         self.stride = stride
     def forward(self, input: Tensor) -> Tensor:
-        inputX, inputY = input.shape()
-        kernelX, kernelY = self.kernel.shape()
-
-        outputY = (inputY - kernelY) // self.stride + 1
-        outputX = (inputX - kernelX) // self.stride + 1
-        output = np.zeros((outputY, outputX))
-        
-        for y in range(0, inputY - kernelY + 1, self.stride):
-            for x in range(0, inputX - kernelX + 1, self.stride):
-                region = input.arr[y:y+kernelY, x:x+kernelX]
-                output[y // self.stride, x // self.stride] = np.sum(region * self.kernel.arr)
-        return output
+        self.input = input
+        arr = input.driver.Conv2DForward(input, self.kernel, self.stride)
+        return Tensor(arr, origin = self)
+    def backward(self, grad):
+        newGrad, gradKernel = self.input.driver.Conv2DBackward(self.input.arr, self.kernel.arr, grad, self.stride)
+        self.input.grad  += newGrad
+        self.kernel.grad += gradKernel
+        self.input._backward(newGrad)
         
 class Linear(UnaryOp):
     def __init__(self, inNeuron: int, outNeuron: int, dtype:Type=Type.f64):
