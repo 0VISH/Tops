@@ -27,6 +27,14 @@ class Echo(BroadcastOp):
         newGrad = np.array([np.sum(grad)])
         self.input.grad += newGrad
         self.input._backward(newGrad)
+class Flatten(BroadcastOp):
+    def forward(self, t):
+        self.input = t
+        return Tensor(t.arr.flatten(), origin=self)
+    def backward(self, grad):
+        newGrad = np.reshape(grad, self.input.shape())
+        self.input.grad += newGrad
+        self.input._backward(newGrad)
 
 class Tensor:
     def __init__(self, arr, shape=None, dtype:Type=Type.f64, driver=CPUDriver(), origin=None):
@@ -48,6 +56,9 @@ class Tensor:
     @staticmethod
     def fill(shape, val, dtype:Type=Type.f64):
         return Tensor(np.full(shape, val, dtype=dtype), dtype=dtype)
+    def flatten(self):
+        f = Flatten()
+        return f.forward(self)
     def __add__(self, other):
         lhs = self
         rhs = other
