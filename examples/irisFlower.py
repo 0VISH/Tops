@@ -46,7 +46,7 @@ for i in range(EPOCHS):
         input = Tensor(data[j][0], shape=(1, 4))
         predicted = n.forward(input)
         truth = Tensor([data[j][1]])
-        loss = MSE.forward(truth, predicted)
+        loss = MSE(truth, predicted)
         runningLoss += loss.arr
         loss.backward()
         optim.step(0.1)

@@ -1,5 +1,6 @@
 from .tensor import *
 
+#outputSize: (inputSize - filterSize + 2*padding)/stride + 1
 class Conv2D(BinaryOp):
     def __init__(self, kernelSize, stride=1):
         self.kernel = Tensor.rand(kernelSize)
@@ -43,6 +44,8 @@ class NN:
             elif type(param) == BatchNormalization:
                 parameters.append(param.alpha)
                 parameters.append(param.beta)
+            elif type(param) == Conv2D:
+                parameters.append(param.kernel)
         return parameters
     def forward(self, x: Tensor) -> Tensor:
         raise NotImplementedError(f"forward not implemented for {self.__class__.__name__}")

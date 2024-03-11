@@ -30,7 +30,7 @@ class Echo(BroadcastOp):
 class Flatten(BroadcastOp):
     def forward(self, t):
         self.input = t
-        return Tensor(t.arr.flatten(), origin=self)
+        return Tensor(t.arr, shape=(1,np.size(t.arr)),origin=self)
     def backward(self, grad):
         newGrad = np.reshape(grad, self.input.shape())
         self.input.grad += newGrad

@@ -33,7 +33,7 @@ for i in range(EPOCHS):
         input = Tensor([inputs[j]], dtype=Type.f32)
         predicted = n.forward(input)
         truth = Tensor([[outputs[j]]], dtype=Type.f32)
-        loss = MSE.forward(truth, predicted)
+        loss = MSE(truth, predicted)
         runningLoss += loss.arr
         print(f"epoch: {i}/{EPOCHS} loss: {loss.arr}", end="\r")
         loss.backward()
