@@ -95,6 +95,22 @@ class CPUDriver:
             newGrad = x * (1-x) * grad
             self.input.grad += newGrad
             self.input._backward(newGrad)
+    class ReLu(ops.UnaryOp):
+        def forward(self, input):
+            self.input = input
+            return tensor.Tensor(np.maximum(0, input.grad), origin=self)
+        def backward(self, grad):
+            newGrad = np.where(self.input.arr <= 0, 0, 1) * grad
+            self.input.grad += newGrad
+            self.input._backward(newGrad)
+    class Log(ops.UnaryOp):
+        def forward(self, input):
+            self.input = input
+            return tensor.Tensor(np.log(input.arr+tensor.DELTA), origin=self)
+        def backward(self, grad):
+            newGrad = (1/(self.input.arr+tensor.DELTA)) * grad
+            self.input.grad += newGrad
+            self.input._backward(newGrad)
     @staticmethod
     def Conv2DForward(input, kernel, stride):
         inputX, inputY = input.shape()

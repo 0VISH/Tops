@@ -16,13 +16,12 @@ class Type:
     f32 = np.float32
     f64 = np.float64
 
+
 class Echo(BroadcastOp):
     def __init__(self, outputShape): self.outputShape = outputShape
     def forward(self, t):
         self.input = t
-        out = Tensor.fill(self.outputShape, t.arr, dtype=t.type())
-        out.origin = self
-        return out
+        return Tensor.fill(self.outputShape, t.arr, dtype=t.type(), origin=self)
     def backward(self, grad):
         newGrad = np.array([np.sum(grad)])
         self.input.grad += newGrad

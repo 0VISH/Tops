@@ -25,19 +25,17 @@ class net(NN):
         self.l2 = Linear(150, 50)
         self.l3 = Linear(50, 10)
     def forward(self, x):
-        z1 = self.c1.forward(x)
-        z2 = Sigmoid(z1)
-        z3 = self.c2.forward(z2)
-        z4 = Sigmoid(z3)
-        z5 = z4.flatten()
-        z6 = self.l1.forward(z5)
-        z7 = self.l2.forward(z6)
-        z8 = self.l3.forward(z7)
-        return z8
+        z1 = ReLu(self.c1.forward(x))
+        z2 = ReLu(self.c2.forward(z1))
+        z3 = z2.flatten()
+        z4 = ReLu(self.l1.forward(z3))
+        z5 = ReLu(self.l2.forward(z4))
+        z6 = ReLu(self.l3.forward(z5))
+        return z6
 
 n = net()
 optim = SGD(n.getParameters())
-EPOCHS = 4
+EPOCHS = 10
 runningLoss = 0
 
 for i in range(EPOCHS):
@@ -52,4 +50,10 @@ for i in range(EPOCHS):
         loss.backward()
         optim.step(0.1)
 
-print("\nloss:", runningLoss/(EPOCHS*len(inputs)))
+print("\nloss:", runningLoss/(EPOCHS*len(data)))
+
+for i in range(1):
+    input = Tensor([data[j][0]], shape=(28, 28))
+    truth = Tensor([data[j][1]])
+    predicted = n.forward(input)
+    print(predicted.arr, "|", truth.arr)

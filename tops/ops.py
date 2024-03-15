@@ -40,3 +40,9 @@ def Pow(input, x):
 def Sigmoid(input):
     f = input.driver.Sigmoid()
     return f.forward(input)
+def ReLu(input):
+    f = input.driver.ReLu()
+    return f.forward(input)
+def Log(input):
+    f = input.driver.Log()
+    return f.forward(input)
