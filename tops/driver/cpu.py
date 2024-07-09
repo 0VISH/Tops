@@ -3,9 +3,6 @@ from tops import ops
 import numpy as np
 
 class CPUDriver:
-    @staticmethod
-    def numpy(): pass
-
     class Add(ops.BinaryOp):
         def forward(self, lhs, rhs):
             super().reg(lhs, rhs)
@@ -88,8 +85,19 @@ class CPUDriver:
             self.outArr = out.arr
             return out
         def backward(self, grad):
-            mean = self.input.arr.mean()
-            newGrad  = (1/(self.outArr+tensor.DELTA)) * ((self.input.arr - mean) / np.shape(self.input.arr)[1]) * grad
+            if self.keepdim and self.dim == 0: grad = grad[0]
+            elif self.keepdim==False and self.dim == 1:
+                grad = np.array([grad]).T
+                self.outArr = np.array([self.outArr]).T
+            split = np.split(grad, grad.shape[self.dim], axis=self.dim)
+            splitInput = np.split(self.input.numpy(), self.input.shape()[self.dim], axis=self.dim)
+            splitOutput = np.split(self.outArr, self.outArr.shape[self.dim], axis=self.dim)
+            d = []
+            for i in range(0, len(splitInput)):
+                mean = splitInput[i].mean()
+                stdVar = splitInput[i].std()
+                d.append((splitInput[i] - mean)/(splitInput[i].size * stdVar))
+            newGrad = np.concatenate(d, axis=self.dim) 
             self.input.grad += newGrad
             self.input._backward(newGrad)
     class Pow(ops.UnaryOp):
