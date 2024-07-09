@@ -81,23 +81,19 @@ class CPUDriver:
             self.keepdim=keepdim
         def forward(self, input):
             self.input = input
-            out = tensor.Tensor(input.arr.std(axis=self.dim, keepdims=self.keepdim), dtype=input.type(), origin=self)
-            self.outArr = out.arr
-            return out
+            return tensor.Tensor(input.arr.std(axis=self.dim, keepdims=self.keepdim), dtype=input.type(), origin=self)
         def backward(self, grad):
             if self.keepdim and self.dim == 0: grad = grad[0]
-            elif self.keepdim==False and self.dim == 1:
-                grad = np.array([grad]).T
-                self.outArr = np.array([self.outArr]).T
-            split = np.split(grad, grad.shape[self.dim], axis=self.dim)
-            splitInput = np.split(self.input.numpy(), self.input.shape()[self.dim], axis=self.dim)
-            splitOutput = np.split(self.outArr, self.outArr.shape[self.dim], axis=self.dim)
+            elif self.keepdim==False and self.dim == 1: grad = np.array([grad]).T
+            ndim = int(not self.dim)
+            splitInput = np.split(self.input.numpy(), self.input.shape()[ndim], axis=ndim)
             d = []
+            size = splitInput[0].size
             for i in range(0, len(splitInput)):
                 mean = splitInput[i].mean()
-                stdVar = splitInput[i].std()
-                d.append((splitInput[i] - mean)/(splitInput[i].size * stdVar))
-            newGrad = np.concatenate(d, axis=self.dim) 
+                std = splitInput[i].std()
+                d.append((splitInput[i] - mean)/((size-1) * std))
+            newGrad = np.concatenate(d, axis=ndim)
             self.input.grad += newGrad
             self.input._backward(newGrad)
     class Pow(ops.UnaryOp):
