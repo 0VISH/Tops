@@ -69,7 +69,13 @@ class CPUDriver:
             self.input = input
             return tensor.Tensor(input.arr.mean(axis=self.dim, keepdims=self.keepdim), dtype=input.type(), origin=self)
         def backward(self, grad):
-            newGrad = np.full(self.input.shape(), grad/self.input.count())
+            if self.keepdim and self.dim == 0: grad = grad[0]
+            elif self.keepdim==False and self.dim == 1: grad = np.array([grad]).T
+            split = np.split(grad, grad.shape[self.dim], axis=self.dim)
+            d = []
+            for i in range(0, len(split)):
+                d.append(np.full(split[i].shape, grad[i]/self.input.shape()[self.dim]))
+            newGrad = np.concatenate(d, axis=self.dim)
             self.input.grad += newGrad
             self.input._backward(newGrad)
     class StdDev(ops.BroadcastOp):
