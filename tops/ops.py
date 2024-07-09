@@ -28,11 +28,11 @@ class BroadcastOp:
         print(self)
         self.input.printGraph(level+1)
 
-def Mean(input):
-    f = input.driver.Mean()
+def Mean(input, dim=1, keepdim=False):
+    f = input.driver.Mean(dim, keepdim)
     return f.forward(input)
-def StdDev(input):
-    f = input.driver.StdDev()
+def StdDev(input, dim=1, keepdim=False):
+    f = input.driver.StdDev(dim, keepdim)
     return f.forward(input)
 def Pow(input, x):
     f = input.driver.Pow()

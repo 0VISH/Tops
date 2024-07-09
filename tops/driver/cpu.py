@@ -3,6 +3,9 @@ from tops import ops
 import numpy as np
 
 class CPUDriver:
+    @staticmethod
+    def numpy(): pass
+
     class Add(ops.BinaryOp):
         def forward(self, lhs, rhs):
             super().reg(lhs, rhs)
@@ -59,17 +62,23 @@ class CPUDriver:
             self.lhs._backward(lhsGrad)
             self.rhs._backward(rhsGrad)
     class Mean(ops.BroadcastOp):
+        def __init__(self, dim, keepdim):
+            self.dim = dim
+            self.keepdim=keepdim
         def forward(self, input):
             self.input = input
-            return tensor.Tensor([input.arr.mean()], dtype=input.type(), origin=self)
+            return tensor.Tensor(input.arr.mean(axis=self.dim, keepdims=self.keepdim), dtype=input.type(), origin=self)
         def backward(self, grad):
             newGrad = np.full(self.input.shape(), grad/self.input.count())
             self.input.grad += newGrad
             self.input._backward(newGrad)
     class StdDev(ops.BroadcastOp):
+        def __init__(self, dim, keepdim):
+            self.dim = dim
+            self.keepdim=keepdim
         def forward(self, input):
             self.input = input
-            out = tensor.Tensor([input.arr.std()], dtype=input.type(), origin=self)
+            out = tensor.Tensor(input.arr.std(axis=self.dim, keepdims=self.keepdim), dtype=input.type(), origin=self)
             self.outArr = out.arr
             return out
         def backward(self, grad):

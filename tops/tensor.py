@@ -34,7 +34,9 @@ class Flatten(BroadcastOp):
         newGrad = np.reshape(grad, self.input.shape())
         self.input.grad += newGrad
         self.input._backward(newGrad)
-
+def ConvertToTensor(t, outputShape):
+    if(type(t) is Tensor): return t
+    return Tensor.fill(outputShape, t)
 class Tensor:
     def __init__(self, arr, shape=None, dtype:Type=Type.f64, driver=CPUDriver(), origin=None):
         if(type(arr) == np.ndarray): self.arr = arr
@@ -44,6 +46,9 @@ class Tensor:
         self.origin = origin
         self.driver = driver
     def zeroGrad(self): self.grad = np.zeros_like(self.arr, dtype=np.float64)
+    def numpy(self):
+        self.driver.numpy()
+        return self.arr
     def type(self):  return self.arr.dtype
     def shape(self): return np.shape(self.arr)
     def count(self): return np.size(self.arr)
@@ -53,36 +58,48 @@ class Tensor:
     def rand(shape, dtype:Type=Type.f64):
         return Tensor(np.random.randn(*shape).astype(dtype), dtype=dtype)
     @staticmethod
-    def fill(shape, val, dtype:Type=Type.f64):
-        return Tensor(np.full(shape, val, dtype=dtype), dtype=dtype)
+    def fill(shape, val, origin=None, dtype:Type=Type.f64):
+        return Tensor(np.full(shape, val, dtype=dtype), dtype=dtype, origin=origin)
     def flatten(self):
         f = Flatten()
         return f.forward(self)
     def __add__(self, other):
         lhs = self
-        rhs = other
-        if lhs.shape() == (1,1) or lhs.shape() == (1,):
+        rhs = ConvertToTensor(other, lhs.shape())
+        if lhs.shape() == (1,):
             b = Echo(rhs.shape())
             lhs = b.forward(lhs)
-        if rhs.shape() == (1,1) or rhs.shape() == (1,):
+        if rhs.shape() == (1,):
+            b = Echo(lhs.shape())
+            rhs = b.forward(rhs)
+        if lhs.shape()[1] == 1 and rhs.shape()[1] != 1:
+            b = Echo(rhs.shape())
+            lhs = b.forward(lhs)
+        if rhs.shape()[1] == 1 and lhs.shape()[1] != 1:
             b = Echo(lhs.shape())
             rhs = b.forward(rhs)
         f = self.driver.Add()
         return f.forward(lhs, rhs)
     def __sub__(self, other):
         lhs = self
-        rhs = other
-        if lhs.shape() == (1,1) or lhs.shape() == (1,):
+        rhs = ConvertToTensor(other, lhs.shape())
+        if lhs.shape() == (1,):
             b = Echo(rhs.shape())
             lhs = b.forward(lhs)
-        if rhs.shape() == (1,1) or rhs.shape() == (1,):
+        if rhs.shape() == (1,):
+            b = Echo(lhs.shape())
+            rhs = b.forward(rhs)
+        if lhs.shape()[1] == 1 and rhs.shape()[1] != 1:
+            b = Echo(rhs.shape())
+            lhs = b.forward(lhs)
+        if rhs.shape()[1] == 1 and lhs.shape()[1] != 1:
             b = Echo(lhs.shape())
             rhs = b.forward(rhs)
         f = self.driver.Sub()
         return f.forward(lhs, rhs)
     def __mul__(self, other):
         lhs = self
-        rhs = other
+        rhs = ConvertToTensor(other, lhs.shape())
         if lhs.shape() == (1,1) or lhs.shape() == (1,):
             b = Echo(rhs.shape())
             lhs = b.forward(lhs)
@@ -93,7 +110,7 @@ class Tensor:
         return f.forward(lhs, rhs)
     def __truediv__(self, other):
         lhs = self
-        rhs = other
+        rhs = ConvertToTensor(other, lhs.shape())
         if lhs.shape() == (1,1) or lhs.shape() == (1,):
             b = Echo(rhs.shape())
             lhs = b.forward(lhs)
