@@ -3,6 +3,8 @@ from tops import ops
 import numpy as np
 
 class CPUDriver:
+    @staticmethod
+    def concat(arr, axis): return np.concatenate(arr, axis)
     class Add(ops.BinaryOp):
         def forward(self, lhs, rhs):
             super().reg(lhs, rhs)

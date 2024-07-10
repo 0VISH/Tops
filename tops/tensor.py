@@ -49,6 +49,11 @@ def BroadTheBroadcast(lhs, rhs):
         b = Echo(lhs.shape())
         rhs = b.forward(rhs)
     return lhs, rhs
+def concat(arr, axis=0):
+    driver = arr[0].driver
+    newArr = []
+    for i in arr: newArr.append(i.numpy())
+    return Tensor(driver.concat(newArr, axis))
 class Tensor:
     def __init__(self, arr, shape=None, dtype:Type=Type.f64, driver=CPUDriver(), origin=None):
         if(type(arr) == np.ndarray): self.arr = arr
@@ -58,8 +63,9 @@ class Tensor:
         self.origin = origin
         self.driver = driver
     def zeroGrad(self): self.grad = np.zeros_like(self.arr, dtype=np.float64)
-    def numpy(self):     return self.arr
-    def gradient(self):  return self.grad
+    def numpy(self):    return self.arr
+    def gradient(self): return self.grad
+    def __getitem__(self, key): return self.numpy()[key]
     def type(self):  return self.arr.dtype
     def shape(self): return np.shape(self.arr)
     def count(self): return np.size(self.arr)
