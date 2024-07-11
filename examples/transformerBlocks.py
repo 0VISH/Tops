@@ -1,3 +1,5 @@
+#This file contains all the blocks required to build a transformer
+
 from tops import *
 import math
 
@@ -23,11 +25,14 @@ class FeedForwardBlock(NN):
         i = ReLu(self.l1.forward(input))
         return self.l2.forward(i)
 class SingleHeadAttention(NN):
-    def __init__(self, h):
-        assert dModel % h == 0, "dModel is not divisible by h"
-        self.q = Linear(dModel, dModel)
-        self.k = Linear(dModel, dModel)
-        self.v = Linear(dModel, dModel)
-        self.h = h
-    def forward(self, input, q, k, v, mask):
+    def __init__(self, dQOut, dVOut):
+        self.q = Linear(dModel, dQOut)
+        self.k = Linear(dModel, dQOut)
+        self.v = Linear(dModel, dVOut)
+    def forward(self, input, q, k, v, mask=None):
+        # NOTE: R + -inf = -inf
+        if mask: input += mask
+        q = input @ q
+        k = input @ k
+        v = input @ v
         return Softmax((q @ k.transpose())/(dModel ** 0.5)) @ v
