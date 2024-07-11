@@ -46,3 +46,6 @@ def ReLu(input):
 def Log(input):
     f = input.driver.Log()
     return f.forward(input)
+def Softmax(input):
+    f = input.driver.Softmax()
+    return f.forward(input)

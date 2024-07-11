@@ -22,3 +22,12 @@ class FeedForwardBlock(NN):
     def forward(self, input):
         i = ReLu(self.l1.forward(input))
         return self.l2.forward(i)
+class SingleHeadAttention(NN):
+    def __init__(self, h):
+        assert dModel % h == 0, "dModel is not divisible by h"
+        self.q = Linear(dModel, dModel)
+        self.k = Linear(dModel, dModel)
+        self.v = Linear(dModel, dModel)
+        self.h = h
+    def forward(self, input, q, k, v, mask):
+        return Softmax((q @ k.transpose())/(dModel ** 0.5)) @ v

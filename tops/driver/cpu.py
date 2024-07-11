@@ -94,7 +94,7 @@ class CPUDriver:
             for i in range(0, len(splitInput)):
                 mean = splitInput[i].mean()
                 std = splitInput[i].std()
-                d.append((splitInput[i] - mean)/((size-1) * std))
+                d.append(((splitInput[i] - mean)/((size-1) * std)) * grad[i])
             newGrad = np.concatenate(d, axis=ndim)
             self.input.grad += newGrad
             self.input._backward(newGrad)
@@ -116,6 +116,13 @@ class CPUDriver:
             newGrad = x * (1-x) * grad
             self.input.grad += newGrad
             self.input._backward(newGrad)
+    class Softmax(ops.UnaryOp):
+        def forward(self, input):
+            self.input = input
+            self.out = np.exp(input.arr) / np.sum(np.exp(input.arr), axis=0)
+            return tensor.Tensor(self.out)
+        def backward(self, grad):
+            return self.out * (1 - self.out)
     class ReLu(ops.UnaryOp):
         def forward(self, input):
             self.input = input

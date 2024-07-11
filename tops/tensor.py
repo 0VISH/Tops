@@ -65,6 +65,7 @@ class Tensor:
     def zeroGrad(self): self.grad = np.zeros_like(self.arr, dtype=np.float64)
     def numpy(self):    return self.arr
     def gradient(self): return self.grad
+    def transpose(self): return Tensor(self.numpy().T)
     def __getitem__(self, key): return self.numpy()[key]
     def type(self):  return self.arr.dtype
     def shape(self): return np.shape(self.arr)
